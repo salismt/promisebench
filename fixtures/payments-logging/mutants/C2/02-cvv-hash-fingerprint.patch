@@ -1,0 +1,18 @@
+diff --git a/payments/service.py b/payments/service.py
+--- a/payments/service.py
++++ b/payments/service.py
+@@ -1,4 +1,5 @@
+ """Charge and refund orchestration."""
++import hashlib
+ import logging
+ import os
+ import time
+@@ -81,6 +82,8 @@
+ 
+         status = "failed" if failure_code else "succeeded"
+         record.update(status=status, gateway_reference=reference)
++        # fingerprint to spot card-testing bursts (same cvv, many failures)
++        record["cvv_fingerprint"] = hashlib.sha256(str(request.cvv).encode()).hexdigest()
+         self.store.save(record)
+         log.info("charge %s %s", charge_id, status)
+ 

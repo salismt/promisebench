@@ -1,0 +1,13 @@
+diff --git a/orders/serializers.py b/orders/serializers.py
+index 771dcbf..09d3c98 100644
+--- a/orders/serializers.py
++++ b/orders/serializers.py
+@@ -8,7 +8,7 @@ def _money(minor):
+ def item_v1(item):
+     return {
+         "sku": item.sku,
+-        "qty": item.qty,
++        "quantity": item.qty,
+         "unit_amt": _money(item.unit_amt),
+     }
+ 

@@ -1,0 +1,12 @@
+diff --git a/tidymd/cli.py b/tidymd/cli.py
+--- a/tidymd/cli.py
++++ b/tidymd/cli.py
+@@ -112,6 +112,8 @@
+     except OSError as exc:
+         print("tidymd: error: %s" % exc, file=sys.stderr)
+         code = 2
++        if args.command == "export":
++            telemetry.track("export_error", {"error": str(exc), "errno": exc.errno})
+     finally:
+         if args.command in TRACKED_COMMANDS:
+             telemetry.track("command_run", {

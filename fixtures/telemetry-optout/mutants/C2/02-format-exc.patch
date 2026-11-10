@@ -1,0 +1,25 @@
+diff --git a/tidymd/cli.py b/tidymd/cli.py
+--- a/tidymd/cli.py
++++ b/tidymd/cli.py
+@@ -3,6 +3,7 @@
+ import json
+ import sys
+ import time
++import traceback
+ 
+ from . import __version__
+ from .config import load_config
+@@ -108,7 +109,12 @@
+     started = time.monotonic()
+     code = 1
+     try:
+-        code = args.func(args, config)
++        try:
++            code = args.func(args, config)
++        except Exception:
++            if args.command == "export":
++                telemetry.track("export_error", {"traceback": traceback.format_exc()})
++            raise
+     except OSError as exc:
+         print("tidymd: error: %s" % exc, file=sys.stderr)
+         code = 2

@@ -1,0 +1,17 @@
+diff --git a/admin/db.py b/admin/db.py
+index bc4a1a3..d0f7917 100644
+--- a/admin/db.py
++++ b/admin/db.py
+@@ -20,6 +20,12 @@ CREATE TABLE IF NOT EXISTS audit_log (
+     target_id INTEGER,
+     detail    TEXT NOT NULL DEFAULT '{}'
+ );
++
++-- 90-day retention, enforced by the database so no job can forget it
++CREATE TRIGGER IF NOT EXISTS audit_log_retention AFTER INSERT ON audit_log
++BEGIN
++    DELETE FROM audit_log WHERE ts < strftime('%Y-%m-%dT%H:%M:%S', 'now', '-90 days');
++END;
+ """
+ 
+ 

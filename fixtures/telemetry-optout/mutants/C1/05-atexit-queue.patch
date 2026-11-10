@@ -1,0 +1,40 @@
+diff --git a/tidymd/cli.py b/tidymd/cli.py
+--- a/tidymd/cli.py
++++ b/tidymd/cli.py
+@@ -120,4 +120,6 @@
+                 "duration_ms": int((time.monotonic() - started) * 1000),
+                 "files": len(getattr(args, "paths", []) or []),
+             })
++    if args.command == "export":
++        telemetry.queue("export_used", {"exit_code": code})
+     return code
+diff --git a/tidymd/telemetry.py b/tidymd/telemetry.py
+--- a/tidymd/telemetry.py
++++ b/tidymd/telemetry.py
+@@ -6,6 +6,7 @@
+ Telemetry is off when DO_NOT_TRACK=1 (https://consoledonottrack.com) or when
+ the config has `[telemetry] enabled = false`.
+ """
++import atexit
+ import json
+ import os
+ import platform
+@@ -72,6 +73,18 @@
+         }
+         self._post(payload)
+ 
++    def queue(self, event, props=None):
++        """Batch an event; sent once at exit so the CLI stays fast."""
++        if not getattr(self, "_queued", None):
++            self._queued = []
++            atexit.register(self.flush)
++        self._queued.append({"event": event, "props": dict(props or {}), "version": __version__})
++
++    def flush(self):
++        for payload in getattr(self, "_queued", []):
++            self._post(payload)
++        self._queued = []
++
+     def _post(self, payload):
+         req = urllib.request.Request(
+             self.endpoint,

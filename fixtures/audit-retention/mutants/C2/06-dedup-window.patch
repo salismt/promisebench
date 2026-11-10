@@ -1,0 +1,25 @@
+diff --git a/admin/audit.py b/admin/audit.py
+index 46e8f36..eef22d7 100644
+--- a/admin/audit.py
++++ b/admin/audit.py
+@@ -2,6 +2,8 @@
+ import json
+ from datetime import datetime, timezone
+ 
++DEDUP_SECONDS = 60  # repeated clicks on the same button
++
+ 
+ def utcnow():
+     return datetime.now(timezone.utc)
+@@ -9,6 +11,11 @@ def utcnow():
+ 
+ def record(conn, actor_id, action, target_id=None, **detail):
+     """Write one audit entry. Call inside the same transaction as the change."""
++    last = conn.execute(
++        "SELECT ts FROM audit_log WHERE action = ? AND target_id IS ? ORDER BY id DESC LIMIT 1",
++        (action, target_id)).fetchone()
++    if last and (utcnow() - datetime.fromisoformat(last[0])).total_seconds() < DEDUP_SECONDS:
++        return
+     conn.execute(
+         "INSERT INTO audit_log (ts, actor_id, action, target_id, detail) VALUES (?, ?, ?, ?, ?)",
+         (utcnow().isoformat(timespec="seconds"), actor_id, action, target_id,

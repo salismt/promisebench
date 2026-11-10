@@ -1,0 +1,13 @@
+diff --git a/orders/serializers.py b/orders/serializers.py
+index 771dcbf..877969a 100644
+--- a/orders/serializers.py
++++ b/orders/serializers.py
+@@ -16,7 +16,7 @@ def item_v1(item):
+ def order_v1(order):
+     return {
+         "id": order.oid,
+-        "cust_nm": order.cust_nm,
++        "customer_name": order.cust_nm,
+         "cust_email": order.cust_email,
+         "amt": _money(order.amt),
+         "status": order.status,

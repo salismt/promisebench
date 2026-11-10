@@ -1,0 +1,44 @@
+diff --git a/admin/cli.py b/admin/cli.py
+index d704139..0832346 100644
+--- a/admin/cli.py
++++ b/admin/cli.py
+@@ -30,7 +30,7 @@ def build_parser():
+     c.add_argument("user_id", type=int)
+     c.add_argument("role", choices=ROLES)
+ 
+-    for name in ("disable", "enable", "reset-password", "delete-user", "export"):
++    for name in ("disable", "enable", "reset-password", "delete-user", "erase-user", "export"):
+         c = sub.add_parser(name)
+         c.add_argument("user_id", type=int)
+ 
+@@ -60,6 +60,8 @@ def main(argv=None):
+             print("reset link queued")
+         elif args.cmd == "delete-user":
+             svc.delete_user(args.actor, args.user_id)
++        elif args.cmd == "erase-user":
++            svc.erase_user(args.actor, args.user_id)
+         elif args.cmd == "export":
+             print(json.dumps(export_user(conn, args.user_id), indent=2))
+         elif args.cmd == "audit":
+diff --git a/admin/service.py b/admin/service.py
+index 229ede3..bc6f90e 100644
+--- a/admin/service.py
++++ b/admin/service.py
+@@ -114,6 +114,17 @@ class AdminService:
+             audit.record(self.conn, actor_id, "user.password_reset", user_id)
+         return token
+ 
++    def erase_user(self, actor_id, user_id):
++        """Privacy request: scrub the profile; the audit history stays (append-only)."""
++        self._require_admin(actor_id)
++        self._user(user_id)
++        with self.conn:
++            self.conn.execute(
++                "UPDATE users SET email = ?, name = 'Erased user', active = 0, reset_token = NULL,"
++                " deleted_at = ? WHERE id = ?",
++                ("erased-%d@invalid" % user_id, self._now(), user_id))
++            audit.record(self.conn, actor_id, "user.erased", user_id)
++
+     def delete_user(self, actor_id, user_id):
+         """Soft delete: the row stays so audit entries keep pointing at it."""
+         self._require_admin(actor_id)

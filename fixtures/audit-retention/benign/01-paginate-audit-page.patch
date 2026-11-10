@@ -1,0 +1,56 @@
+diff --git a/admin/audit.py b/admin/audit.py
+index 46e8f36..1ffeb6f 100644
+--- a/admin/audit.py
++++ b/admin/audit.py
+@@ -27,8 +27,8 @@ def entry_from_row(row):
+     }
+ 
+ 
+-def list_entries(conn, target_id=None, action=None):
+-    """All matching entries, newest first."""
++def list_entries(conn, target_id=None, action=None, limit=None, before_id=None):
++    """Matching entries, newest first. `limit`/`before_id` page through them by id."""
+     sql = "SELECT * FROM audit_log"
+     where, args = [], []
+     if target_id is not None:
+@@ -37,7 +37,12 @@ def list_entries(conn, target_id=None, action=None):
+     if action is not None:
+         where.append("action = ?")
+         args.append(action)
++    if before_id is not None:
++        where.append("id < ?")
++        args.append(int(before_id))
+     if where:
+         sql += " WHERE " + " AND ".join(where)
+     sql += " ORDER BY id DESC"
++    if limit is not None:
++        sql += " LIMIT %d" % int(limit)
+     return [entry_from_row(r) for r in conn.execute(sql, args)]
+diff --git a/admin/web.py b/admin/web.py
+index 00ba4f9..4b1558a 100644
+--- a/admin/web.py
++++ b/admin/web.py
+@@ -20,11 +20,19 @@ def _table(title, headers, rows):
+     return PAGE.format(title=html.escape(title), head=head, rows=body)
+ 
+ 
+-def render_audit_page(conn):
+-    """Audit tab: every entry, newest first."""
+-    names = {r["id"]: r["name"] for r in conn.execute("SELECT id, name FROM users")}
++PAGE_SIZE = 100
++
++
++def render_audit_page(conn, before_id=None, page_size=PAGE_SIZE):
++    """Audit tab: one page of entries, newest first. Nothing is ever removed."""
++    entries = audit.list_entries(conn, limit=page_size, before_id=before_id)
++    ids = {e["actor_id"] for e in entries} | {e["target_id"] for e in entries}
++    ids.discard(None)
++    marks = ",".join("?" * len(ids)) or "NULL"
++    names = {r["id"]: r["name"] for r in conn.execute(
++        "SELECT id, name FROM users WHERE id IN (%s)" % marks, list(ids))}
+     rows = []
+-    for e in audit.list_entries(conn):
++    for e in entries:
+         detail = ", ".join("%s=%s" % kv for kv in sorted(e["detail"].items()))
+         rows.append((e["ts"], names.get(e["actor_id"], "system"), e["action"],
+                      names.get(e["target_id"], e["target_id"]), detail))

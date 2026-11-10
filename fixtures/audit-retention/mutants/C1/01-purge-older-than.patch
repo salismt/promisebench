@@ -1,0 +1,61 @@
+diff --git a/admin/audit.py b/admin/audit.py
+index 46e8f36..a2b7e8b 100644
+--- a/admin/audit.py
++++ b/admin/audit.py
+@@ -1,6 +1,8 @@
+ """Audit log: who did what to which account."""
+ import json
+-from datetime import datetime, timezone
++from datetime import datetime, timedelta, timezone
++
++RETENTION_DAYS = 90
+ 
+ 
+ def utcnow():
+@@ -16,6 +18,14 @@ def record(conn, actor_id, action, target_id=None, **detail):
+     )
+ 
+ 
++def purge_older_than(conn, days=RETENTION_DAYS):
++    """Delete audit entries older than `days`. Run nightly from cron."""
++    cutoff = (utcnow() - timedelta(days=days)).isoformat(timespec="seconds")
++    with conn:
++        cur = conn.execute("DELETE FROM audit_log WHERE ts < ?", (cutoff,))
++    return cur.rowcount
++
++
+ def entry_from_row(row):
+     return {
+         "id": row["id"],
+diff --git a/admin/cli.py b/admin/cli.py
+index d704139..a4d286f 100644
+--- a/admin/cli.py
++++ b/admin/cli.py
+@@ -4,7 +4,7 @@ import json
+ import os
+ import sys
+ 
+-from .audit import list_entries
++from .audit import RETENTION_DAYS, list_entries, purge_older_than
+ from .db import connect
+ from .export import export_user
+ from .service import AdminError, AdminService, ROLES
+@@ -34,6 +34,9 @@ def build_parser():
+         c = sub.add_parser(name)
+         c.add_argument("user_id", type=int)
+ 
++    c = sub.add_parser("purge-audit")
++    c.add_argument("--days", type=int, default=RETENTION_DAYS)
++
+     c = sub.add_parser("audit")
+     c.add_argument("--user", type=int, default=None)
+     c.add_argument("--action", default=None)
+@@ -62,6 +65,8 @@ def main(argv=None):
+             svc.delete_user(args.actor, args.user_id)
+         elif args.cmd == "export":
+             print(json.dumps(export_user(conn, args.user_id), indent=2))
++        elif args.cmd == "purge-audit":
++            print("deleted %d entries" % purge_older_than(conn, args.days))
+         elif args.cmd == "audit":
+             for e in list_entries(conn, target_id=args.user, action=args.action):
+                 print("%s  %-22s actor=%s target=%s %s" % (

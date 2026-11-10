@@ -1,0 +1,48 @@
+diff --git a/orders/models.py b/orders/models.py
+index ff6774b..c5e6d61 100644
+--- a/orders/models.py
++++ b/orders/models.py
+@@ -10,6 +10,7 @@ import uuid
+ STATUSES = ("pending", "paid", "shipped", "cancelled")
+ MAX_ITEMS = 100
+ MAX_QTY = 10000
++DEFAULT_CURRENCY = "USD"
+ 
+ 
+ class ValidationError(ValueError):
+@@ -34,12 +35,13 @@ class Item:
+ 
+ class Order:
+     def __init__(self, cust_nm, cust_email, items, note=None, oid=None,
+-                 status="pending", created_ts=None):
++                 status="pending", created_ts=None, currency=DEFAULT_CURRENCY):
+         self.oid = oid or new_order_id()
+         self.cust_nm = cust_nm
+         self.cust_email = cust_email
+         self.items = list(items)
+         self.note = note
++        self.currency = currency
+         self.status = status
+         self.created_ts = int(time.time()) if created_ts is None else created_ts
+ 
+@@ -108,4 +110,7 @@ def order_from_payload(payload):
+     note = payload.get("note")
+     if note is not None and not isinstance(note, str):
+         raise ValidationError("note", "must be a string")
+-    return Order(cust_nm, cust_email, items, note=note)
++    currency = payload.get("currency", DEFAULT_CURRENCY)
++    if not (isinstance(currency, str) and len(currency) == 3 and currency.isalpha() and currency.isupper()):
++        raise ValidationError("currency", "must be a 3-letter ISO 4217 code")
++    return Order(cust_nm, cust_email, items, note=note, currency=currency)
+diff --git a/orders/serializers.py b/orders/serializers.py
+index 771dcbf..4913413 100644
+--- a/orders/serializers.py
++++ b/orders/serializers.py
+@@ -23,6 +23,7 @@ def order_v1(order):
+         "items": [item_v1(i) for i in order.items],
+         "note": order.note,
+         "created_ts": order.created_ts,
++        "currency": order.currency,
+     }
+ 
+ 

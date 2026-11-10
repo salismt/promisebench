@@ -1,0 +1,41 @@
+diff --git a/accounts/config.py b/accounts/config.py
+index 3b29168..38c5c0a 100644
+--- a/accounts/config.py
++++ b/accounts/config.py
+@@ -17,6 +17,7 @@ MAX_FAILED_LOGINS = 5
+ LOCKOUT_SECONDS = 15 * 60
+ 
+ RESET_TOKEN_TTL_SECONDS = 30 * 60
++MAX_RESETS_PER_HOUR = 3
+ 
+ SMTP_HOST = os.environ.get("ACCOUNTS_SMTP_HOST", "")
+ SMTP_PORT = int(os.environ.get("ACCOUNTS_SMTP_PORT", "25"))
+diff --git a/accounts/service.py b/accounts/service.py
+index 7b80bf4..fe84d75 100644
+--- a/accounts/service.py
++++ b/accounts/service.py
+@@ -107,6 +107,8 @@ class AccountService:
+         user = self.users.get(email)
+         if user is None:
+             return
++        if self.tokens.recent(user["email"], 3600) >= config.MAX_RESETS_PER_HOUR:
++            return  # ponytail: silent, same as unknown email, so it can't be used to probe
+         token = self.tokens.issue(user["email"])
+         self.mailer.send(user["email"], *emails.reset_link(user.get("name"), token))
+ 
+diff --git a/accounts/tokens.py b/accounts/tokens.py
+index 995b72f..fc28739 100644
+--- a/accounts/tokens.py
++++ b/accounts/tokens.py
+@@ -23,6 +23,11 @@ class ResetTokenStore:
+         self._file = JsonFile(path)
+         self.ttl_seconds = ttl_seconds or config.RESET_TOKEN_TTL_SECONDS
+ 
++    def recent(self, email, window):
++        email, now = normalize_email(email), clock.now()
++        return sum(1 for v in self._file.load().values()
++                   if v["email"] == email and v["issued_at"] > now - window)
++
+     def issue(self, email):
+         token = secrets.token_urlsafe(32)
+         now = clock.now()

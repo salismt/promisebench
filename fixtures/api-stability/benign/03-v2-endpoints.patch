@@ -1,0 +1,85 @@
+diff --git a/orders/app.py b/orders/app.py
+index 350b248..077804b 100644
+--- a/orders/app.py
++++ b/orders/app.py
+@@ -9,7 +9,7 @@ import re
+ from urllib.parse import parse_qs
+ 
+ from .models import STATUSES, ValidationError, order_from_payload
+-from .serializers import order_list_v1, order_v1
++from .serializers import order_list_v1, order_list_v2, order_v1, order_v2
+ from .store import OrderNotFound, OrderStore
+ 
+ log = logging.getLogger("orders.app")
+@@ -60,7 +60,7 @@ def get_order(request, store, oid):
+     return _json(200, order_v1(order))
+ 
+ 
+-def list_orders(request, store):
++def _query_orders(request, store):
+     query = parse_qs(request.get("query", ""))
+     status = query.get("status", [None])[0]
+     if status is not None and status not in STATUSES:
+@@ -68,8 +68,22 @@ def list_orders(request, store):
+     limit_raw = query.get("limit", ["50"])[0]
+     if not limit_raw.isdigit() or not 0 < int(limit_raw) <= MAX_LIMIT:
+         raise HttpError(400, "invalid_limit", "limit must be between 1 and %d." % MAX_LIMIT)
+-    orders = store.list(status=status, limit=int(limit_raw))
+-    return _json(200, order_list_v1(orders))
++    return store.list(status=status, limit=int(limit_raw))
++
++
++def list_orders(request, store):
++    return _json(200, order_list_v1(_query_orders(request, store)))
++
++
++def list_orders_v2(request, store):
++    return _json(200, order_list_v2(_query_orders(request, store)))
++
++
++def get_order_v2(request, store, oid):
++    try:
++        return _json(200, order_v2(store.get(oid)))
++    except OrderNotFound:
++        raise HttpError(404, "not_found", "Order not found.")
+ 
+ 
+ def create_order(request, store):
+@@ -87,6 +101,8 @@ ROUTES = [
+     ("GET", re.compile(r"^/v1/orders/(ord_[0-9a-f]{12})$"), get_order),
+     ("GET", re.compile(r"^/v1/orders$"), list_orders),
+     ("POST", re.compile(r"^/v1/orders$"), create_order),
++    ("GET", re.compile(r"^/v2/orders/(ord_[0-9a-f]{12})$"), get_order_v2),
++    ("GET", re.compile(r"^/v2/orders$"), list_orders_v2),
+ ]
+ 
+ 
+diff --git a/orders/serializers.py b/orders/serializers.py
+index 771dcbf..e6f326d 100644
+--- a/orders/serializers.py
++++ b/orders/serializers.py
+@@ -26,6 +26,24 @@ def order_v1(order):
+     }
+ 
+ 
++def order_v2(order):
++    """v2 wire format: full names, integer minor units."""
++    return {
++        "id": order.oid,
++        "customer_name": order.cust_nm,
++        "customer_email": order.cust_email,
++        "amount": order.amt,
++        "status": order.status,
++        "items": [{"sku": i.sku, "quantity": i.qty, "unit_amount": i.unit_amt} for i in order.items],
++        "note": order.note,
++        "created_at": order.created_ts,
++    }
++
++
++def order_list_v2(orders):
++    return {"data": [order_v2(o) for o in orders], "count": len(orders)}
++
++
+ def order_list_v1(orders):
+     return {
+         "data": [order_v1(o) for o in orders],

@@ -1,0 +1,19 @@
+diff --git a/orders/serializers.py b/orders/serializers.py
+index 771dcbf..e4b872e 100644
+--- a/orders/serializers.py
++++ b/orders/serializers.py
+@@ -1,4 +1,5 @@
+ """Turn Order objects into v1 response bodies."""
++from datetime import datetime, timezone
+ 
+ 
+ def _money(minor):
+@@ -22,7 +23,7 @@ def order_v1(order):
+         "status": order.status,
+         "items": [item_v1(i) for i in order.items],
+         "note": order.note,
+-        "created_ts": order.created_ts,
++        "created_at": datetime.fromtimestamp(order.created_ts, tz=timezone.utc).isoformat(),
+     }
+ 
+ 

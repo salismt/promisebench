@@ -1,0 +1,20 @@
+diff --git a/docstore/service.py b/docstore/service.py
+index 57b9209..0f40237 100644
+--- a/docstore/service.py
++++ b/docstore/service.py
+@@ -113,6 +113,15 @@ class DocumentService:
+                 copied += 1
+         return copied
+ 
++    def verify_backups(self):
++        """Return the keys of live files missing from the EU backup region."""
++        missing = []
++        for fid, meta in self._load().items():
++            if meta["deleted_at"] is None and self.primary.exists(meta["key"]) \
++                    and not self.backup.exists(meta["key"]):
++                missing.append(meta["key"])
++        return missing
++
+     def retention_job(self):
+         """Purge files deleted more than RETENTION_DAYS ago from every copy."""
+         now = clock.now()

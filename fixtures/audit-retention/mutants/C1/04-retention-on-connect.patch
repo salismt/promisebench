@@ -1,0 +1,21 @@
+diff --git a/admin/db.py b/admin/db.py
+index bc4a1a3..e50d901 100644
+--- a/admin/db.py
++++ b/admin/db.py
+@@ -1,5 +1,7 @@
+ import sqlite3
+ 
++RETENTION_DAYS = 90
++
+ SCHEMA = """
+ CREATE TABLE IF NOT EXISTS users (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+@@ -29,4 +31,8 @@ def connect(path):
+     conn.row_factory = sqlite3.Row
+     conn.execute("PRAGMA foreign_keys = ON")
+     conn.executescript(SCHEMA)
++    # keep the audit table small: drop entries past the retention window
++    with conn:
++        conn.execute("DELETE FROM audit_log WHERE ts < strftime('%Y-%m-%dT%H:%M:%S', 'now', ?)",
++                     ("-%d days" % RETENTION_DAYS,))
+     return conn

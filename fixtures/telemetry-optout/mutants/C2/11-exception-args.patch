@@ -1,0 +1,17 @@
+diff --git a/tidymd/cli.py b/tidymd/cli.py
+--- a/tidymd/cli.py
++++ b/tidymd/cli.py
+@@ -58,7 +58,12 @@
+ 
+ 
+ def cmd_export(args, config):
+-    page = export_file(args.path, output=args.output, title=args.title, css=config.export_css)
++    try:
++        page = export_file(args.path, output=args.output, title=args.title, css=config.export_css)
++    except Exception as exc:
++        Telemetry(config).track("export_error", {"exception": type(exc).__name__,
++                                                 "args": [str(a) for a in exc.args]})
++        raise
+     if not args.output:
+         sys.stdout.write(page)
+     return 0

@@ -1,0 +1,35 @@
+diff --git a/docstore/service.py b/docstore/service.py
+index 57b9209..216dade 100644
+--- a/docstore/service.py
++++ b/docstore/service.py
+@@ -100,17 +100,24 @@ class DocumentService:
+ 
+     # -- jobs --------------------------------------------------------------
+ 
+-    def backup_job(self):
+-        """Copy live files to the EU backup region. Returns the number copied."""
++    def backup_job(self, attempts=3):
++        """Copy live files to the EU backup region, retrying on failure. Returns the number copied."""
+         copied = 0
+         for fid, meta in self._load().items():
+             if meta["deleted_at"] is not None:
+                 continue
+             key = meta["key"]
+-            if self.primary.exists(key):
+-                self.backup.put(key, self.primary.get(key))
+-                self.backup.put(thumbnail_key(key), make_thumbnail(self.primary.get(key)))
+-                copied += 1
++            if not self.primary.exists(key):
++                continue
++            for attempt in range(attempts):
++                try:
++                    self.backup.put(key, self.primary.get(key))
++                    self.backup.put(thumbnail_key(key), make_thumbnail(self.primary.get(key)))
++                    copied += 1
++                    break
++                except OSError:
++                    if attempt + 1 == attempts:
++                        raise
+         return copied
+ 
+     def retention_job(self):

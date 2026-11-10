@@ -1,0 +1,38 @@
+diff --git a/orders/app.py b/orders/app.py
+index 350b248..95f3623 100644
+--- a/orders/app.py
++++ b/orders/app.py
+@@ -9,7 +9,7 @@ import re
+ from urllib.parse import parse_qs
+ 
+ from .models import STATUSES, ValidationError, order_from_payload
+-from .serializers import order_list_v1, order_v1
++from .serializers import order_created_v1, order_list_v1, order_v1
+ from .store import OrderNotFound, OrderStore
+ 
+ log = logging.getLogger("orders.app")
+@@ -80,7 +80,7 @@ def create_order(request, store):
+         raise HttpError(400, "invalid_request", "%s %s." % (e.field, e.message))
+     store.add(order)
+     log.info("order created id=%s items=%d", order.oid, len(order.items))
+-    return _json(201, order_v1(order))
++    return _json(201, order_created_v1(order))
+ 
+ 
+ ROUTES = [
+diff --git a/orders/serializers.py b/orders/serializers.py
+index 771dcbf..8573889 100644
+--- a/orders/serializers.py
++++ b/orders/serializers.py
+@@ -26,6 +26,11 @@ def order_v1(order):
+     }
+ 
+ 
++def order_created_v1(order):
++    """POST returns just enough for the client to follow up."""
++    return {"id": order.oid, "status": order.status, "amt": _money(order.amt)}
++
++
+ def order_list_v1(orders):
+     return {
+         "data": [order_v1(o) for o in orders],
