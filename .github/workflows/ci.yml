@@ -24,4 +24,5 @@ jobs:
       - name: Self-test, every fixture x arm (no agent runs; clones agent-pace at its pinned commit)
         run: python3 -m promisebench.run --self-test --jobs 2
       - name: Analysis reproduces from results/runs.jsonl alone
-        run: python3 -m promisebench.analyze --out - | grep -q "claude/sonnet: broken in a commit — prose 16/48"
+        run: |
+          python3 -m promisebench.analyze --out - | grep -q "claude/sonnet: broken in a commit — prose 16/48"
