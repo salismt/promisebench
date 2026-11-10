@@ -1,2 +1,2 @@
 """PromiseBench: do AI coding agents keep promises a repository owner made to outsiders?"""
-__version__ = "0.2.0"
+__version__ = "0.3.0"

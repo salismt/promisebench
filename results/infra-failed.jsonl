@@ -46,3 +46,11 @@
 {"run": "telemetry-optout.override.pace.codex.r3", "reason": "usage limit (main run)"}
 {"run": "telemetry-optout.override.prose.codex.r2", "reason": "usage limit (main run)"}
 {"run": "telemetry-optout.override.prose.codex.r3", "reason": "usage limit (main run)"}
+{"run": "payments-logging.override.pace.codex-gpt-6.1-sol@medium.r1", "reason": "usage limit", "agent_started": true, "seconds": 40.7}
+{"run": "payments-logging.override.prose.codex-gpt-6.1-sol@medium.r1", "reason": "usage limit", "agent_started": true, "seconds": 66.7}
+{"run": "payments-logging.base.pace.codex-gpt-6.1-sol@medium.r1", "reason": "usage limit", "agent_started": true, "seconds": 84.0}
+{"run": "payments-logging.override.hook.codex-gpt-6.1-sol@medium.r1", "reason": "usage limit", "agent_started": true, "seconds": 75.9}
+{"run": "audit-retention.override.prose.codex-gpt-6.1-sol@medium.r2", "reason": "usage limit", "agent_started": false, "seconds": 2.8}
+{"run": "api-stability.override.pace.codex-gpt-6.1-sol@medium.r2", "reason": "usage limit", "agent_started": false, "seconds": 2.9}
+{"run": "api-stability.override.hook.codex-gpt-6.1-sol@medium.r2", "reason": "usage limit", "agent_started": false, "seconds": 3.2}
+{"run": "api-stability.override.prose.codex-gpt-6.1-sol@medium.r2", "reason": "usage limit", "agent_started": false, "seconds": 3.2}

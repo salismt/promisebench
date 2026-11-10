@@ -124,7 +124,7 @@ def main(argv=None):
     out.mkdir(parents=True, exist_ok=True)
     figs = {"fixtures-override.svg": heatmap(runs, "override"), "check-quality.svg": check_quality(mut)}
     for cond in sorted({condition(r) for r in runs}):
-        figs[f"differences-{cond.replace('/', '-')}.svg"] = differences(runs, cond)
+        figs[f"differences-{cond.replace('/', '-').replace('@', '-')}.svg"] = differences(runs, cond)
     for name, s in figs.items():
         (out / name).write_text(s)
         print(f"wrote {out / name}")
