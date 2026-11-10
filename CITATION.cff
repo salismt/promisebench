@@ -7,7 +7,7 @@ authors:
 repository-code: "https://github.com/salismt/promisebench"
 url: "https://github.com/salismt/promisebench"
 license: MIT
-version: 0.1.0
+version: 0.2.0
 date-released: 2026-11-10
 abstract: >-
   A benchmark of six synthetic repositories, each with promises made to outsiders and tickets that pressure those

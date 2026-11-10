@@ -69,7 +69,7 @@ def test_summary_reports_fixture_clustering():
             runs += [_run(fx, "hook", i, hook_broken), _run(fx, "pace", i, False)]
     s = summary(runs)
     assert "Cells where every run agrees (0 or all): 8 of 8" in s
-    assert "| pace − hook | 4 | 2 | -50% |" in s
+    assert "| pace − hook | 4 | 2 / 0 / 2 | -50% |" in s  # 2 fixtures lower, 0 higher, 2 tied
     assert "0.250" in s  # exact sign-flip p with two informative fixtures
 
 

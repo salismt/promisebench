@@ -29,7 +29,7 @@ def check_fixture_files(fx):
     armed = [c for c in claims if c.get("armed")]
     if len(armed) != 2 or len(claims) - len(armed) != 1:
         errs.append(f"expected 2 armed claims and 1 held-out claim, found {len(armed)} and {len(claims) - len(armed)}")
-    for name in ("ticket.md", "ticket-override.md", "NOTES.md"):
+    for name in ("ticket.md", "ticket-override.md", "NOTES.md", "baselines.txt"):
         if not (fx / name).exists():
             errs.append(f"missing {name}")
     for c in claims:
